@@ -113,6 +113,12 @@ body{font-weight:700;letter-spacing:.1px}b,h1,h2,h3{font-weight:800}
 #nb,#nb h3,#nb b,#nb small,#nb p,#nb span,#nb .f,#nb .f small,#nb .b:not(.gold){color:#fff;opacity:1}
 #nb .gold{color:#3a2300}
 #msgin::placeholder,#lotname::placeholder{color:rgba(255,255,255,.65)}
+.fld select{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--bd);background:#1b2a52;color:#fff;font:inherit}
+/* tout en blanc et en gras */
+*{color:#fff!important;font-weight:800!important}
+::placeholder{color:rgba(255,255,255,.7)!important}
+.gold,.tabs button.on{background:linear-gradient(#e0951a,#a9650a)!important;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:inset 0 1px 0 #fff5,0 2px 6px #0006}
+select option{background:#1b2a52}.perr{min-height:1.3em;font-size:12px;margin:2px 0 6px}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap">
@@ -254,7 +260,7 @@ function info(k){const b=S.plots[k],o=T[b.t];let armed=0;
  openSheet(o.ic+" "+o.n+" · niveau "+b.lv,d=>{d.append(h("p",o.d+" Rapporte "+b.lv*5+" 🪙 toutes les 10 s."),h("p","Rattache une ou plusieurs plateformes à cette construction : son niveau suit leur valeur."));
   d.append(h("p",`Valeur de la zone : <b>${fmt(zval(b))}</b>. ${b.lv>=5?"Niveau maximum.":"Prochain niveau à "+fmt(LVS[b.lv-1])+"."}`));
   PL.forEach(p=>{const on=b.links.includes(p.n);d.append(btn(`<span>${on?"✅":"➕"}</span><div><b>${p.n}</b><small>${on?"Rattachée · "+fmt(((S.acc[p.n]||{}).bal||0)/nOf(p.n))+" sur cette zone":"Touche pour rattacher"}</small></div>`,()=>{attach(k,p.n);info(k)}))});
-  b.links.forEach(n=>{const q=PL.find(x=>x.n===n),a=h("a","↗ Ouvrir "+n,"b x");a.href=q.u;a.target="_blank";a.rel="noopener noreferrer";d.append(a)});
+  b.links.forEach(n=>{const q=PL.find(x=>x.n===n);if(!q||!q.u)return;const a=h("a","↗ Ouvrir "+n,"b x");a.href=q.u;a.target="_blank";a.rel="noopener noreferrer";d.append(a)});
   const del=btn("🗑 Supprimer (remboursement 50 %)",()=>{if(!armed){armed=1;del.textContent="Confirmer la suppression ?";return}
    Object.keys(o.c).forEach(r=>S[r]+=Math.round(o.c[r]*.5));delete S.plots[k];sel=null;draw(k);sync();save();ui();closeSheet()},"b x");d.append(del)})}
 const prop=()=>openSheet("Ma propriété",d=>Object.keys(S.plots).forEach(k=>{const b=S.plots[k],o=T[b.t];d.append(btn(`<span>${o.ic}</span><div><b>${o.n}</b><small>Niveau ${b.lv}${b.links.length?" · "+b.links.length+" plateforme(s)":""}</small></div>`,()=>{sel=k;focus(k);closeSheet();ui()}))}));
@@ -264,12 +270,15 @@ function missions(){openSheet("Missions",d=>MS.forEach((m,i)=>{const ok=m[1](),d
  d.append(btn(`<span>${dn?"✅":ok?"🎁":"⏳"}</span><div><b>${m[0]}</b><small>Récompense : ${cost(m[2])}</small></div>`,()=>{if(ok&&!dn){S.done.push(i);give(m[2]);save();ui();missions()}},"b"+(ok&&!dn?" gold":"")))}))}
 const events=()=>openSheet("Événements",d=>[["🎉","Concours du plus beau jardin","Dans 2 jours"],["🏗️","Semaine de la construction","Bientôt"],["🌧️","Pluie d’automne","Les plantes poussent plus vite"]].forEach(e=>d.append(h("div",`<span>${e[0]}</span><div><b>${e[1]}</b><small>${e[2]}</small></div>`,"b"))));
 const shop=()=>openSheet("Boutique",d=>{d.append(h("p","Échange tes pièces contre des ressources."));["wood","mat","plants"].forEach(r=>d.append(btn(`<span>${RN[r]}</span><div><b>${RL[r]} +300</b><small>${cost({coins:1000})}</small></div>`,()=>{if(pay({coins:1000})){S[r]+=300;save();ui()}else toast("Pas assez de pièces")})))});
+const pseudoOk=v=>{v=String(v||"").trim();return v.length>=2&&v.length<=14&&/^[\p{L}\p{N} ._-]+$/u.test(v)&&v.toLowerCase()!=="joueur"};
 function avatarScreen(first){
  let sel2=S.avatar;const o=h("div","");o.id="intro";
- o.innerHTML=`<h1>CHOISIS TON AVATAR</h1><p>${first?"Bienvenue ! Ton avatar te représente dans ton village et auprès de tes voisins, au fil de tes investissements.":"Change d’avatar quand tu veux."}</p><label class="ps">Pseudo <input id="pseudo" maxlength="14" value="${esc(S.pseudo||"Joueur")}"></label>`;
+ o.innerHTML=`<h1>CHOISIS TON AVATAR</h1><p>${first?"Bienvenue ! Choisis ton pseudo et ton avatar : ils te représentent dans ton village et auprès de tes voisins.":"Change d’avatar ou de pseudo quand tu veux."}</p><label class="ps">Pseudo <input id="pseudo" maxlength="14" placeholder="2 à 14 caractères" value="${esc(pseudoOk(S.pseudo)?S.pseudo:"")}"></label><p id="perr" class="perr"></p>`;
  [["m","♂ Avatars masculins"],["f","♀ Avatars féminins"]].forEach(([g,t])=>{o.append(h("h2",t));const gr=h("div","");gr.className="grid";
   AV.forEach((a,i)=>{if(a.g!==g)return;const b=btn(`<img src="${a.hd}" alt=""><span>${a.n}</span>`,()=>{sel2=i;o.querySelectorAll(".card").forEach(c=>c.classList.toggle("on",+c.dataset.i===i))},"card"+(i===sel2?" on":""));b.dataset.i=i;gr.append(b)});o.append(gr)});
- const ok=btn("VALIDER MON AVATAR",()=>{S.avatar=sel2;S.pseudo=(o.querySelector("#pseudo").value.trim()||"Joueur").slice(0,14);S.chosen=true;save();o.remove();ok.remove();ui();lotProfile()},"");ok.id="ok";
+ const ok=btn("VALIDER MON AVATAR",()=>{const v=o.querySelector("#pseudo").value.trim();if(!pseudoOk(v))return;S.avatar=sel2;S.pseudo=v;S.chosen=true;save();o.remove();ok.remove();ui();lotProfile()},"");ok.id="ok";
+ const inp=o.querySelector("#pseudo"),er=o.querySelector("#perr"),chk=()=>{const v=inp.value.trim(),g=pseudoOk(v);ok.disabled=!g;ok.style.opacity=g?"1":".45";er.textContent=g||!v?"":(v.toLowerCase()==="joueur"?"Choisis un pseudo à toi.":"2 à 14 caractères : lettres, chiffres, espace, . _ -")};
+ inp.addEventListener("input",chk);inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok.click()});chk();
  if(!first){const x=btn("✕",()=>{o.remove();ok.remove()},"cl");x.id="xc";o.append(x)}
  document.body.append(o,ok);o.scrollTop=0}
 const avatars=()=>avatarScreen(false);
@@ -277,6 +286,13 @@ const settings=()=>openSheet("Réglages",d=>{let a=0;const r=btn("↺ Recommence
 
 // ===== Portefeuille et plateformes =====
 const PC={Bricks:"#f5b73b",SwissBorg:"#3fb950",Mintos:"#3b82c4","Trade Republic":"#b06be8",Fundora:"#e0623b"};
+const PALETTE=["#e84393","#00b8a9","#f08a24","#6c8cff","#9ccc3c","#ff6b6b","#c471ed","#4fc3f7"],KINDS_P=["Courtier / bourse","Crypto","Immobilier (crowdfunding)","Prêts participatifs","Épargne / banque","Autre"];
+S.cust=S.cust||[];S.cust.forEach(c=>{if(!PL.some(x=>x.n===c.n)){PL.push({n:c.n,u:c.u||"",cust:1,kind:c.kind||"Autre"});PC[c.n]=c.c}});
+function addPlatform(n,u,k){n=String(n).replace(/[<>&"'`]/g,"").trim().slice(0,24);u=String(u||"").trim();
+ if(n.length<2)return"Donne un nom à la plateforme";if(PL.some(x=>x.n.toLowerCase()===n.toLowerCase()))return"Cette plateforme existe déjà";
+ if(u&&!/^https?:\/\//i.test(u))u="https://"+u;if(!/^https?:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?([\/?#][^\s"'<>`]*)?$/i.test(u))u="";
+ const c=PALETTE[S.cust.length%PALETTE.length];S.cust.push({n,u,c,kind:k});PL.push({n,u,cust:1,kind:k});PC[n]=c;save();return""}
+function removePlatform(p){PL.splice(PL.indexOf(p),1);S.cust=S.cust.filter(x=>x.n!==p.n);delete S.acc[p.n];Object.values(S.plots).forEach(b=>{b.links=b.links.filter(n=>n!==p.n)});sync();save();ui()}
 const fmt=n=>Math.round(n).toLocaleString("fr-FR")+" €",num=v=>{const x=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return isFinite(x)&&x>=0?Math.min(x,1e9):0};
 const tot=()=>PL.reduce((t,p)=>t+((S.acc[p.n]||{}).bal||0),0),inv=()=>PL.reduce((t,p)=>t+((S.acc[p.n]||{}).inv||0),0);
 // ===== Niveau des bâtiments = valeur du portefeuille rattaché =====
@@ -293,16 +309,25 @@ function pfRender(){const T0=tot(),I=inv(),g=T0-I,pc=I>0?g/I*100:0,hs=(S.hist||[
  +parts.map(p=>`<div class="f"><span><span class="dot" style="background:${PC[p.n]}"></span>${p.n}</span><small>${Math.round(S.acc[p.n].bal/T0*100)} %</small></div>`).join(""):"<p>Aucune donnée pour l’instant. Saisis le solde de tes plateformes.</p>")
  +`<button class="b gold" id="pfb">${T0?"Gérer mes plateformes":"Renseigner mes plateformes"}</button>`}
 $("#pf").onclick=e=>{if(e.target.closest("#pfb"))platforms()};
+function addPlat(){openSheet("Ajouter une plateforme",d=>{
+ d.append(h("p","Ajoute n’importe quelle plateforme (banque, courtier, crypto, immobilier…) : tu pourras ensuite lui rattacher des bâtiments et saisir son solde."));
+ d.append(h("label",'Nom de la plateforme<input id="pn" maxlength="24" placeholder="ex. Binance, Crédit Agricole">',"fld"),h("label",'Lien (facultatif)<input id="pu" maxlength="200" inputmode="url" placeholder="https://…">',"fld"),
+  h("label",'Type<select id="pk">'+KINDS_P.map(k=>"<option>"+k+"</option>").join("")+"</select>","fld"));
+ d.append(btn("Ajouter",()=>{const n=d.querySelector("#pn").value,r=addPlatform(n,d.querySelector("#pu").value,d.querySelector("#pk").value);if(r)return toast(r);ui();toast("Plateforme ajoutée");editAcc(PL[PL.length-1])},"b gold"),btn("Retour",platforms,"b x"))})}
 function platforms(){openSheet("Mes plateformes",d=>{
- d.append(h("p",`Total : <b>${fmt(tot())}</b>. Pour l’instant tu saisis tes soldes toi-même : ils restent sur ton appareil. La synchronisation automatique demandera un serveur sécurisé.`));
+ d.append(h("p",`Total : <b>${fmt(tot())}</b>. Tu saisis tes soldes toi-même pour l’instant : ils restent sur ton appareil.`));
  PL.forEach(p=>{const a=S.acc[p.n]||{bal:0,inv:0},z=Object.keys(S.plots).filter(k=>S.plots[k].links.includes(p.n)).map(k=>T[S.plots[k].t].n);
-  d.append(btn(`<span class="dot" style="background:${PC[p.n]};width:14px;height:14px"></span><div><b>${p.n}</b><small>${a.bal?fmt(a.bal)+" · investi "+fmt(a.inv):"Aucun solde saisi"}</small><small>${z.length?"Zones : "+z.join(", "):"Aucune zone reliée"}</small></div>`,()=>editAcc(p)))})})}
+  d.append(btn(`<span class="dot" style="background:${PC[p.n]};width:14px;height:14px"></span><div><b>${p.n}</b><small>${a.bal?fmt(a.bal)+" · investi "+fmt(a.inv):"Aucun solde saisi"} · saisie manuelle</small><small>${z.length?"Zones : "+z.join(", "):"Aucune zone reliée"}</small></div>`,()=>editAcc(p)))});
+ d.append(btn("➕ Ajouter une plateforme",addPlat,"b gold"))})}
 function editAcc(p){const a=S.acc[p.n]||{bal:0,inv:0};
  openSheet(p.n,d=>{d.append(h("label",`Valeur actuelle (€)<input id="fb" inputmode="decimal" value="${a.bal||""}" placeholder="ex. 1250">`,"fld"),h("label",`Montant investi (€)<input id="fi" inputmode="decimal" value="${a.inv||""}" placeholder="ex. 1000">`,"fld"));
   d.append(btn("Enregistrer",()=>{S.acc[p.n]={bal:num(d.querySelector("#fb").value),inv:num(d.querySelector("#fi").value),at:Date.now()};S.hist=(S.hist||[]).concat({t:Date.now(),total:tot()}).slice(-60);sync();save();ui();platforms()},"b gold"));
+  d.append(h("p","<b>Suivi automatique</b> : pas encore disponible pour "+p.n+". Il passera par un agrégateur agréé, plateforme par plateforme."),btn("🔌 Connecter automatiquement (bientôt)",()=>toast("Bientôt : cette connexion demande un agrégateur agréé"),"b x off"));
   d.append(h("p","Bâtiments rattachés à cette plateforme (leur niveau suit sa valeur) :"));
   Object.keys(S.plots).forEach(k=>{const b=S.plots[k],on=b.links.includes(p.n);d.append(btn(`<span>${on?"✅":"➕"}</span><div><b>${T[b.t].n}</b><small>Niveau ${b.lv}</small></div>`,()=>{S.acc[p.n]={bal:num(d.querySelector("#fb").value),inv:num(d.querySelector("#fi").value),at:Date.now()};attach(k,p.n);editAcc(p)}))});
-  const l=h("a","↗ Ouvrir "+p.n,"b x");l.href=p.u;l.target="_blank";l.rel="noopener noreferrer";d.append(l,btn("Retour",platforms,"b x"))})}
+  if(p.u){const l=h("a","↗ Ouvrir "+p.n,"b x");l.href=p.u;l.target="_blank";l.rel="noopener noreferrer";d.append(l)}
+  if(p.cust){let z=0;const dl=btn("🗑 Supprimer cette plateforme",()=>{if(!z){z=1;dl.textContent="Confirmer la suppression ?";return}removePlatform(p);platforms()},"b x");d.append(dl)}
+  d.append(btn("Retour",platforms,"b x"))})}
 
 // ===== Lotissement : service partagé (Supabase) =====
 const SB_URL="https://hkpdhjlsnkdhmmihvfwz.supabase.co",SB_KEY="sb_publishable_TQLiWlZE4gK4H63tTkCisA_MpZmo3Te";
@@ -345,7 +370,7 @@ async function sendMsg(t){t=t.trim().slice(0,300);if(!t||Date.now()-LOT.last<120
  try{const r=await sb.from("messages").insert({lot_id:S.lot,pseudo:S.pseudo,avatar:S.avatar,text:t});if(r.error)throw r.error;fetchMsgs()}catch(e){toast("Message non envoyé")}}
 async function lotProfile(){if(LOT.state==="on"&&S.lot){try{await sb.from("members").update({pseudo:S.pseudo,avatar:S.avatar,lvl:S.level}).eq("lot_id",S.lot).eq("user_id",LOT.mid)}catch(e){}}}
 function lotRefresh(){if(sheet.dataset.lot==="1"&&!sheet.hidden&&S.lot)renderLotTab(false)}
-function lotMenu(tab){openSheet("🏘️ Lotissement",d=>{sheet.dataset.lot="1";
+function lotMenu(tab){if(!pseudoOk(S.pseudo))return avatarScreen(true);openSheet("🏘️ Lotissement",d=>{sheet.dataset.lot="1";
  if(LOT.state==="loading")return d.append(h("p","Connexion au service…"));
  if(LOT.state!=="on")return d.append(h("p",LOT.state==="nocfg"?"Le lotissement n’est pas encore configuré (connexion Supabase manquante).":"Le lotissement est momentanément indisponible. Réessaie plus tard."));
  if(LOT.canWrite===false)d.append(h("p","Tu peux lire mais pas participer : demande l’accès Contributeur à l’organisateur."));
@@ -405,7 +430,7 @@ nbRender();
 setInterval(()=>{S.coins+=Object.values(S.plots).reduce((s,x)=>s+x.lv*5,0);save();ui()},10000);
 
 for(const k in P)draw(k);
-resize();overview();ui();if(!S.chosen)avatarScreen(true);
+resize();overview();ui();if(!S.chosen||!pseudoOk(S.pseudo))avatarScreen(true);
 (function loop(){requestAnimationFrame(loop);overlay();ren.render(sc,cam)})();
 </script>
 </body>
